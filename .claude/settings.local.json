@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"C:\\\\Laptop files\\\\TSAJ-Hackathon\" -Force | ForEach-Object { $_.FullName })",
+      "PowerShell(caveman-code *)",
+      "PowerShell(claude mcp *)"
+    ]
+  }
+}
