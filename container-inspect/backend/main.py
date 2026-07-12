@@ -40,23 +40,37 @@ def create_app(db_path: str | None = None, standards_dir: str | None = None) -> 
                 "error": "invalid_container_id",
                 "reason": "ISO 6346 format or check digit failed",
             })
-        ruleset = app.state.rulesets.get(body.standard)
-        if ruleset is None:
-            raise HTTPException(422, detail={
-                "error": "unknown_standard",
-                "available": sorted(app.state.rulesets),
-            })
 
         conn = store.get_conn(app.state.db_path)
         try:
             if idempotency_key:
                 row = conn.execute(
-                    "SELECT i.inspection_id, i.status FROM idempotency k"
-                    " JOIN inspections i ON i.inspection_id = k.inspection_id WHERE k.key = ?",
+                    "SELECT i.inspection_id, i.container_id, i.direction, i.standard_name, i.status"
+                    " FROM idempotency k JOIN inspections i ON i.inspection_id = k.inspection_id"
+                    " WHERE k.key = ?",
                     (idempotency_key,),
                 ).fetchone()
                 if row:
-                    return _response(row["inspection_id"], body, ruleset, event_id=None, replayed=True)
+                    stored_ruleset = app.state.rulesets.get(row["standard_name"])
+                    return {
+                        "inspection_id": row["inspection_id"],
+                        "container_id": row["container_id"],
+                        "direction": row["direction"],
+                        "standard": {
+                            "name": row["standard_name"],
+                            "version": stored_ruleset.version if stored_ruleset else None,
+                        },
+                        "status": row["status"],
+                        "event_id": None,
+                        "replayed": True,
+                    }
+
+            ruleset = app.state.rulesets.get(body.standard)
+            if ruleset is None:
+                raise HTTPException(422, detail={
+                    "error": "unknown_standard",
+                    "available": sorted(app.state.rulesets),
+                })
 
             inspection_id = store.make_id("insp")
             conn.execute(

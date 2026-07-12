@@ -62,3 +62,19 @@ def test_idempotency_replay(client):
     assert r2.json()["replayed"] is True
     events = client.get("/v0/containers/MSKU1234565/history").json()["events"]
     assert len(events) == 1  # no duplicate event appended
+
+
+def test_idempotent_replay_ignores_differing_body(client):
+    h = {"Idempotency-Key": "gate-fire-002"}
+    r1 = client.post("/v0/inspections", json=BODY, headers=h)
+    # double-fire arrives mangled: different direction and unknown standard
+    r2 = client.post("/v0/inspections",
+                     json={**BODY, "direction": "outbound", "standard": "CSC-Plus"},
+                     headers=h)
+    assert r2.status_code == 201
+    assert r2.json()["inspection_id"] == r1.json()["inspection_id"]
+    assert r2.json()["direction"] == "inbound"           # stored value, not the mangled one
+    assert r2.json()["standard"]["name"] == "IICL-6"     # stored value
+    assert r2.json()["replayed"] is True
+    events = client.get("/v0/containers/MSKU1234565/history").json()["events"]
+    assert len(events) == 1
