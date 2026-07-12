@@ -2,7 +2,7 @@ import json
 import os
 from typing import Literal
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 from models import validate_iso6346
@@ -131,6 +131,50 @@ def create_app(db_path: str | None = None, standards_dir: str | None = None) -> 
                 for e in events
             ],
         }
+
+    def _require_inspection(inspection_id: str) -> None:
+        conn = store.get_conn(app.state.db_path)
+        try:
+            row = conn.execute(
+                "SELECT 1 FROM inspections WHERE inspection_id = ?", (inspection_id,)
+            ).fetchone()
+        finally:
+            conn.close()
+        if row is None:
+            raise HTTPException(404, detail={"error": "unknown_inspection"})
+
+    def _not_implemented(milestone: str):
+        raise HTTPException(501, detail={"error": "not_implemented", "milestone": milestone})
+
+    @app.post("/v0/inspections/{inspection_id}/run-vision")
+    def run_vision(inspection_id: str):
+        _require_inspection(inspection_id)
+        _not_implemented("M2")
+
+    @app.post("/v0/inspections/{inspection_id}/run-metrology")
+    def run_metrology(inspection_id: str):
+        _require_inspection(inspection_id)
+        _not_implemented("M3")
+
+    @app.post("/v0/inspections/{inspection_id}/sign")
+    def sign(inspection_id: str):
+        _require_inspection(inspection_id)
+        _not_implemented("M3")
+
+    @app.get("/v0/inspections/{inspection_id}/report.pdf")
+    def report_pdf(inspection_id: str):
+        _require_inspection(inspection_id)
+        _not_implemented("M4")
+
+    @app.websocket("/v0/live")
+    async def live(ws: WebSocket):
+        await ws.accept()
+        try:
+            while True:
+                msg = await ws.receive_text()
+                await ws.send_json({"echo": msg})
+        except WebSocketDisconnect:
+            pass
 
     return app
 
