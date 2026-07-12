@@ -21,6 +21,11 @@ Thumbs.db
 # Node
 node_modules/
 
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
 # Personal configs (if any)
 personal/
 private/
@@ -32,3 +37,5 @@ examples/sessions/*.tmp
 container-inspect/data/*
 !container-inspect/data/.gitkeep
 *.db
+container-inspect/frontend/node_modules/
+container-inspect/frontend/dist/
