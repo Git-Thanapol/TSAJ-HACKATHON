@@ -52,3 +52,32 @@ def test_event_ids_unique(tmp_path):
     ids = {store.append_event(conn, inspection_id="i", container_id="MSKU1234565",
                               type="t", payload={})["event_id"] for _ in range(50)}
     assert len(ids) == 50
+
+
+def test_concurrent_appends_do_not_fork_chain(tmp_path):
+    import threading
+
+    db = str(tmp_path / "t.db")
+    store.get_conn(db).close()  # create schema once
+
+    def worker(n):
+        conn = store.get_conn(db)
+        try:
+            store.append_event(conn, inspection_id=f"i{n}", container_id="MSKU1234565",
+                               type="inspection.started", payload={"n": n})
+        finally:
+            conn.close()
+
+    threads = [threading.Thread(target=worker, args=(n,)) for n in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    conn = store.get_conn(db)
+    events = store.get_history(conn, "MSKU1234565")
+    assert len(events) == 10
+    ok, bad = store.verify_chain(events)
+    assert ok is True and bad is None
+    prev_hashes = [e["prev_hash"] for e in events]
+    assert len(set(prev_hashes)) == 10  # no fork: every event chains to a distinct predecessor

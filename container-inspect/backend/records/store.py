@@ -57,6 +57,7 @@ def get_conn(db_path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
     conn.executescript(_SCHEMA)
     return conn
 
@@ -66,26 +67,31 @@ def _hash_event(fields: dict) -> str:
 
 
 def append_event(conn, *, inspection_id: str, container_id: str, type: str, payload: dict) -> dict:
-    last = conn.execute(
-        "SELECT hash FROM events WHERE container_id = ? ORDER BY seq DESC LIMIT 1",
-        (container_id,),
-    ).fetchone()
-    fields = {
-        "event_id": make_id("evt"),
-        "inspection_id": inspection_id,
-        "container_id": container_id,
-        "type": type,
-        "ts": datetime.now(timezone.utc).isoformat(),
-        "payload_json": canonical(payload),
-        "prev_hash": last["hash"] if last else GENESIS,
-    }
-    event = {**fields, "hash": _hash_event(fields)}
-    conn.execute(
-        "INSERT INTO events (event_id, inspection_id, container_id, type, ts, payload_json, prev_hash, hash)"
-        " VALUES (:event_id, :inspection_id, :container_id, :type, :ts, :payload_json, :prev_hash, :hash)",
-        event,
-    )
-    conn.commit()
+    conn.execute("BEGIN IMMEDIATE")  # write-lock so concurrent appends cannot fork the chain
+    try:
+        last = conn.execute(
+            "SELECT hash FROM events WHERE container_id = ? ORDER BY seq DESC LIMIT 1",
+            (container_id,),
+        ).fetchone()
+        fields = {
+            "event_id": make_id("evt"),
+            "inspection_id": inspection_id,
+            "container_id": container_id,
+            "type": type,
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "payload_json": canonical(payload),
+            "prev_hash": last["hash"] if last else GENESIS,
+        }
+        event = {**fields, "hash": _hash_event(fields)}
+        conn.execute(
+            "INSERT INTO events (event_id, inspection_id, container_id, type, ts, payload_json, prev_hash, hash)"
+            " VALUES (:event_id, :inspection_id, :container_id, :type, :ts, :payload_json, :prev_hash, :hash)",
+            event,
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     return event
 
 
