@@ -5,6 +5,11 @@ Chains are per container_id so a container's history is independently verifiable
 APPEND-ONLY INVARIANT: no UPDATE/DELETE on the events table, ever.
 Every history entry carries its own event_id; writes are idempotent at the API
 layer (idempotency table) because trucks get re-inspected and gates double-fire.
+
+Connection contract: get_conn returns an autocommit connection
+(isolation_level=None). append_event opens its own BEGIN IMMEDIATE
+transaction; callers must not hold an open transaction when calling it.
+Plain-SQL writes to inspections/idempotency autocommit per statement.
 """
 import hashlib
 import json
@@ -55,6 +60,7 @@ def make_id(prefix: str) -> str:
 
 def get_conn(db_path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
+    conn.isolation_level = None  # autocommit: transactions only where we open them explicitly
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=5000")
@@ -67,8 +73,8 @@ def _hash_event(fields: dict) -> str:
 
 
 def append_event(conn, *, inspection_id: str, container_id: str, type: str, payload: dict) -> dict:
-    conn.execute("BEGIN IMMEDIATE")  # write-lock so concurrent appends cannot fork the chain
     try:
+        conn.execute("BEGIN IMMEDIATE")  # write-lock so concurrent appends cannot fork the chain
         last = conn.execute(
             "SELECT hash FROM events WHERE container_id = ? ORDER BY seq DESC LIMIT 1",
             (container_id,),
@@ -90,7 +96,8 @@ def append_event(conn, *, inspection_id: str, container_id: str, type: str, payl
         )
         conn.commit()
     except Exception:
-        conn.rollback()
+        if conn.in_transaction:
+            conn.rollback()
         raise
     return event
 

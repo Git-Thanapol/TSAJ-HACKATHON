@@ -81,3 +81,18 @@ def test_concurrent_appends_do_not_fork_chain(tmp_path):
     assert ok is True and bad is None
     prev_hashes = [e["prev_hash"] for e in events]
     assert len(set(prev_hashes)) == 10  # no fork: every event chains to a distinct predecessor
+
+
+def test_append_after_plain_sql_write_on_same_conn(tmp_path):
+    # API routes write inspections/idempotency via plain SQL on the same
+    # connection before appending events; must not raise nested-transaction errors.
+    conn = _conn(tmp_path)
+    conn.execute(
+        "INSERT INTO inspections (inspection_id, container_id, direction, standard_name, status, created_at)"
+        " VALUES ('i1', 'MSKU1234565', 'inbound', 'IICL-6', 'started', datetime('now'))"
+    )
+    event = store.append_event(conn, inspection_id="i1", container_id="MSKU1234565",
+                               type="inspection.started", payload={})
+    assert event["prev_hash"] == store.GENESIS
+    row = conn.execute("SELECT status FROM inspections WHERE inspection_id='i1'").fetchone()
+    assert row["status"] == "started"
