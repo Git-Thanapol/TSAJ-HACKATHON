@@ -47,7 +47,9 @@ container-inspect/
 ## Data model
 
 **Events table (SQLite, WAL mode):**
-`event_id (ULID, PK) | inspection_id | container_id | type | ts | payload_json | prev_hash | hash`
+`seq (INTEGER PK AUTOINCREMENT) | event_id (UNIQUE) | inspection_id | container_id | type | ts | payload_json | prev_hash | hash`
+
+> Implementation note (final review, 2026-07-12): PK is `seq` AUTOINCREMENT (chain order needs a monotonic key); `event_id` is a UNIQUE time-ordered id from `make_id()` (time_ns hex + uuid fragment), not a strict ULID. Deliberate deviation — do not "fix" back. DB lives on a Docker named volume (`inspection-data`), not a Windows bind mount (SQLite WAL unreliable over Docker Desktop file sharing).
 
 - `hash = sha256(prev_hash + canonical_json(event_fields))`; canonical = sorted keys, no whitespace; event_fields = all columns except `hash` itself (`event_id, inspection_id, container_id, type, ts, payload_json, prev_hash`).
 - Genesis `prev_hash = "0" * 64`.
