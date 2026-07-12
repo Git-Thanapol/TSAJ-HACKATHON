@@ -1,0 +1,8 @@
+standard: IICL-6
+version: "2016-08-01"
+mode: measured            # measured | appearance_only
+components:
+  side_panel:   { measure: internal_cube_intrusion, limit_mm: 35, method: metrology }
+  corner_post:  { measure: max_dent,                limit_mm: 20, method: metrology, any_number_of_dents: true }
+  floor_height: { measure: step_height,             limit_mm: 5,  method: metrology }
+  oil_stain:    { measure: transferable,            accept_if: false, method: human }   # NOT vision

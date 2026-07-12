@@ -1,0 +1,5 @@
+standard: Domestic-Lite
+version: "2026-01"
+mode: appearance_only     # vision zones + human sign-off, no mm thresholds
+components:
+  appearance: { measure: human_review, method: human, zones_from: vision }
