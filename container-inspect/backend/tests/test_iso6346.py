@@ -19,6 +19,7 @@ def test_wrong_check_digit():
     "msku1234565",     # lowercase
     "MSK41234565",     # digit in owner code
     "MSKUABCDEFG",     # letters in serial
+    "MSKU١٢٣٤٥٦٥",     # Arabic-Indic digits, not ASCII
 ])
 def test_malformed_ids(bad):
     assert validate_iso6346(bad) is False

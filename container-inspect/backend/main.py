@@ -93,7 +93,8 @@ def create_app(db_path: str | None = None, standards_dir: str | None = None) -> 
                     "INSERT INTO idempotency (key, inspection_id) VALUES (?, ?)",
                     (idempotency_key, inspection_id),
                 )
-            conn.commit()
+            # autocommit connection: inspections/idempotency INSERTs commit per statement;
+            # append_event manages its own BEGIN IMMEDIATE transaction
             return _response(inspection_id, body, ruleset, event_id=event["event_id"], replayed=False)
         finally:
             conn.close()

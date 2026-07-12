@@ -10,7 +10,7 @@ _LETTER_VALUES = dict(zip(
      25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38],
 ))
 
-_ID_RE = re.compile(r"[A-Z]{4}\d{7}")
+_ID_RE = re.compile(r"[A-Z]{4}[0-9]{7}")
 
 
 def validate_iso6346(container_id: str) -> bool:
