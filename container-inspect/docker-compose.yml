@@ -5,9 +5,13 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      # rw so ?fresh=true inference can refresh assets/vision_cache.json
+      - ./assets:/assets
       - inspection-data:/data
     environment:
       - DB_PATH=/data/inspections.db
+      - ASSETS_DIR=/assets
+      - WEIGHTS_PATH=/assets/weights/damage.pt
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:

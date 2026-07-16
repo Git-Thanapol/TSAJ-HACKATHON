@@ -1,0 +1,11 @@
+{
+  "_comment": "PLACEHOLDER mm values (mock metrology, M3). Replace with team-recorded data; keys are container_id -> photo component from photos.json. Components without a value (or without a metrology rule, e.g. door/roof in the IICL-6 subset) fall to human review.",
+  "MSKU1234565": {
+    "side_panel_left": 41.0,
+    "side_panel_right": 22.0
+  },
+  "TCLU2604184": {
+    "side_panel_left": 18.0,
+    "side_panel_right": 37.5
+  }
+}

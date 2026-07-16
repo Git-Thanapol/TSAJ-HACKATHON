@@ -17,19 +17,6 @@ def _start(client):
     return r.json()["inspection_id"]
 
 
-@pytest.mark.parametrize("method,path_tpl,milestone", [
-    ("post", "/v0/inspections/{id}/run-vision", "M2"),
-    ("post", "/v0/inspections/{id}/run-metrology", "M3"),
-    ("post", "/v0/inspections/{id}/sign", "M3"),
-    ("get", "/v0/inspections/{id}/report.pdf", "M4"),
-])
-def test_stub_returns_501(client, method, path_tpl, milestone):
-    iid = _start(client)
-    r = getattr(client, method)(path_tpl.format(id=iid))
-    assert r.status_code == 501
-    assert r.json()["detail"] == {"error": "not_implemented", "milestone": milestone}
-
-
 def test_stub_unknown_inspection_404(client):
     r = client.post("/v0/inspections/insp_nope/run-vision")
     assert r.status_code == 404

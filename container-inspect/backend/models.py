@@ -54,6 +54,9 @@ class Finding(BaseModel):
     measurement: Measurement | None = None
     decision_source: str                  # precedence: Human > Metrology > Vision
     human_override: bool = False
+    # additive to the handover schema: final post-precedence disposition + human note
+    result: Literal["pass", "concern"] | None = None
+    note: str | None = None
     evidence: list[str] = []
 
 

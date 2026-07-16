@@ -40,3 +40,8 @@ container-inspect/data/*
 *.db
 container-inspect/frontend/node_modules/
 container-inspect/frontend/dist/
+
+# large ML artifacts (too big for GitHub; regenerate via training/README.md)
+Container Damage/
+YOLO_models/
+*.pt

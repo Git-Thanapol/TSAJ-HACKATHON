@@ -7,6 +7,9 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@fontsource/kanit": "^5.2.0",
+    "@fontsource/sarabun": "^5.2.0",
+    "@google/model-viewer": "^4.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0"

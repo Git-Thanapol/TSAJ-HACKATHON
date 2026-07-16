@@ -16,6 +16,21 @@ def load_rulesets(standards_dir: str) -> dict[str, Ruleset]:
     return rulesets
 
 
+def match_rule(ruleset: Ruleset, component: str) -> tuple[str, ComponentRule] | None:
+    """Find the rule for a zone component: exact name, then prefix.
+
+    Photo zones are specific ('side_panel_left'); rulesets are generic
+    ('side_panel'). Components with no matching rule fall to human review.
+    """
+    rule = ruleset.components.get(component)
+    if rule is not None:
+        return component, rule
+    for name, rule in ruleset.components.items():
+        if component.startswith(name):
+            return name, rule
+    return None
+
+
 def evaluate(rule: ComponentRule, value_mm: float) -> Literal["pass", "concern"]:
     """Value-vs-limit check. 'concern', never 'fail' - the human signs the decision."""
     if rule.limit_mm is None:

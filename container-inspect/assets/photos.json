@@ -1,0 +1,34 @@
+{
+  "MSKU1234565": [
+    {
+      "file": "photos/MSKU1234565/door.jpg",
+      "component": "door"
+    },
+    {
+      "file": "photos/MSKU1234565/side_panel_left.jpg",
+      "component": "side_panel_left"
+    },
+    {
+      "file": "photos/MSKU1234565/roof.jpg",
+      "component": "roof"
+    },
+    {
+      "file": "photos/MSKU1234565/side_panel_right.jpg",
+      "component": "side_panel_right"
+    }
+  ],
+  "TCLU2604184": [
+    {
+      "file": "photos/TCLU2604184/side_panel_left.jpg",
+      "component": "side_panel_left"
+    },
+    {
+      "file": "photos/TCLU2604184/side_panel_right.jpg",
+      "component": "side_panel_right"
+    },
+    {
+      "file": "photos/TCLU2604184/door.jpg",
+      "component": "door"
+    }
+  ]
+}
